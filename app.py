@@ -122,8 +122,8 @@ def get_condition_map():
         "glimepiride": ["diabetes"],
         "amoxicillin": ["infection"],
         "azithromycin": ["infection"],
-        "paracetamol": ["pain"],
-        "ibuprofen": ["pain", "inflammation"],
+        "paracetamol": ["pain", "fever"],
+        "ibuprofen": ["pain", "fever"],
         "salbutamol": ["asthma"],
         "montelukast": ["asthma"],
     }
@@ -179,7 +179,8 @@ def render_original_output(result_dict: dict):
         if entries:
             st.write(f"**Total Entries:** {len(entries)}")
             for i, entry in enumerate(entries, 1):
-                with st.expander(f"Entry {i}: {entry.get('drug', 'N/A').title()}"):
+                show = st.checkbox(f"Show Entry {i}: {entry.get('drug', 'N/A').title()}", key=f"report_show_{i}")
+                if show:
                     st.json(entry)
         else:
             st.info("No regimen entries found for this patient.")
@@ -233,7 +234,6 @@ if active == 'Actions':
     for sec in sections:
         if sec == 'calc':
             with st.expander("🧮 Calculate Dose", expanded=(active_section=='calc')):
-                st.markdown('<div class="page-badge">Calculate Dose</div>', unsafe_allow_html=True)
                 st.header("Calculate Dose")
                 drugs = get_drugs()
                 condition_map = get_condition_map()
@@ -278,7 +278,6 @@ if active == 'Actions':
             st.markdown("<hr>", unsafe_allow_html=True)
         elif sec == 'interact':
             with st.expander("⚖️ Check Interaction", expanded=(active_section=='interact')):
-                st.markdown('<div class="page-badge">Check Interaction</div>', unsafe_allow_html=True)
                 st.header("Check Interaction")
                 drugs = get_drugs()
                 col1, col2 = st.columns(2)
@@ -320,7 +319,6 @@ if active == 'Actions':
             st.markdown("<hr>", unsafe_allow_html=True)
         elif sec == 'validate':
             with st.expander("✅ Validate Prescription", expanded=(active_section=='validate')):
-                st.markdown('<div class="page-badge">Validate Prescription</div>', unsafe_allow_html=True)
                 st.header("Validate Prescription")
                 drugs = get_drugs()
                 col1, col2 = st.columns(2)
@@ -372,7 +370,6 @@ elif active == 'Results':
 
 # History and About remain the same below
 elif active == 'History':
-    st.markdown('<div class="page-badge">History</div>', unsafe_allow_html=True)
     st.header("History")
     try:
         if not st.session_state.command_history and not st.session_state.result_history:
@@ -398,7 +395,6 @@ elif active == 'History':
         st.error(f"Failed to render History: {str(e)}")
 
 elif active == 'About':
-    st.markdown('<div class="page-badge">About</div>', unsafe_allow_html=True)
     st.header("About")
     try:
         st.write("Medical Dosage Calculation Interpreter — Software Bros And Programming Nerds.")
