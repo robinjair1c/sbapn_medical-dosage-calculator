@@ -21,47 +21,73 @@ st.set_page_config(
 # Custom CSS for better styling
 st.markdown("""
 <style>
+    :root {
+        --bg: #0f172a;         /* slate-900 */
+        --panel: #111827;      /* gray-900 */
+        --panel-2: #0b1220;    /* darker sidebar */
+        --text: #e5e7eb;       /* gray-200 */
+        --muted: #9ca3af;      /* gray-400 */
+        --primary: #14b8a6;    /* teal-500 */
+        --primary-2: #0ea5a4;  /* teal-600 */
+        --primary-3: #2dd4bf;  /* teal-400 */
+    }
+
+    html, body, [data-testid="stAppViewContainer"] { background-color: var(--bg); color: var(--text); }
+    .block-container { padding-top: 3rem; }
+
     .main-header {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #1f77b4;
+        font-size: 2.4rem;
+        font-weight: 800;
+        color: var(--primary-3);
         text-align: center;
-        margin-bottom: 1rem;
+        letter-spacing: .2px;
+        margin-bottom: .25rem;
     }
-    .sub-header {
-        font-size: 1.2rem;
-        color: #666;
-        text-align: center;
-        margin-bottom: 2rem;
+    .sub-header { color: var(--muted); text-align: center; font-size: 1rem; margin-bottom: 1rem; }
+
+    [data-testid="stSidebar"] { background: var(--panel-2); color: var(--text); }
+    [data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { color: var(--text); }
+
+    .stButton>button {
+        background: var(--primary);
+        color: #0b1322;
+        border: 1px solid rgba(255,255,255,0.08);
+        padding: .55rem .9rem;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(20,184,166,.25);
+        transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
     }
-    .success-box {
-        padding: 1rem;
-        border-radius: 0.5rem;
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        margin: 1rem 0;
+    .stButton>button:hover { transform: translateY(-1px); background: var(--primary-2); box-shadow: 0 10px 28px rgba(20,184,166,.35); }
+
+    .stTextArea textarea, .stNumberInput input, .stSelectbox [role="combobox"], .stRadio > div { 
+        background: var(--panel);
+        color: var(--text);
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,.08);
+        box-shadow: 0 2px 6px rgba(0,0,0,.35);
     }
-    .error-box {
-        padding: 1rem;
-        border-radius: 0.5rem;
-        background-color: #f8d7da;
-        border: 1px solid #f5c6cb;
-        margin: 1rem 0;
+
+    .stTabs [role="tablist"] button {
+        padding: .55rem .9rem;
+        margin-right: .4rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,.12);
+        background: var(--panel);
+        color: var(--muted);
     }
-    .warning-box {
-        padding: 1rem;
-        border-radius: 0.5rem;
-        background-color: #fff3cd;
-        border: 1px solid #ffeaa7;
-        margin: 1rem 0;
+    .stTabs [role="tablist"] button[aria-selected="true"] {
+        background: #0e1a2b;
+        border-color: rgba(20,184,166,.35);
+        color: var(--primary-3);
+        font-weight: 700;
     }
-    .info-box {
-        padding: 1rem;
-        border-radius: 0.5rem;
-        background-color: #d1ecf1;
-        border: 1px solid #bee5eb;
-        margin: 1rem 0;
-    }
+
+    .stAlert { border-radius: 12px; background: var(--panel); color: var(--text); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+    .stMetric { background: var(--panel); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: .75rem; color: var(--text); }
+
+    .chip { display: inline-block; padding: .35rem .7rem; border-radius: 999px; background: #0e1a2b; color: var(--primary-3); border: 1px solid rgba(20,184,166,.35); margin: .25rem .25rem .25rem 0; font-size: .85rem; }
+
+    hr { border: none; height: 1px; background: linear-gradient(90deg, #0000, rgba(255,255,255,.12), #0000); margin: 1.25rem 0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -70,342 +96,317 @@ if 'command_history' not in st.session_state:
     st.session_state.command_history = []
 if 'result_history' not in st.session_state:
     st.session_state.result_history = []
+# Added unified page section state and per-section latest results
+if 'active_tab' not in st.session_state:
+    st.session_state.active_tab = 'Actions'
+if 'active_section' not in st.session_state:
+    st.session_state.active_section = 'calc'
+if 'section_results' not in st.session_state:
+    st.session_state.section_results = {'calc': None, 'interact': None, 'validate': None}
 
-# Header
-st.markdown('<div class="main-header">💊 Medical Dosage Calculation Interpreter</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">AI-Powered Clinical Decision Support Tool</div>', unsafe_allow_html=True)
-
-# Sidebar
-with st.sidebar:
-    st.header("📋 Quick Guide")
-
-    st.subheader("Supported Commands")
-    st.markdown("""
-    1. **CALCULATE DOSE FOR**
-       - Calculate medication dosage
-    2. **CHECK INTERACTION BETWEEN**
-       - Check drug interactions
-    3. **ADJUST DOSE FOR**
-       - Adjust dose with patient factors
-    4. **VALIDATE PRESCRIPTION**
-       - Validate prescribed dose
-    5. **REPORT REGIMEN**
-       - Get patient medication history
-    6. **ALERT WHEN DOSE EXCEEDS SAFETY_LIMIT**
-       - Configure alerts
-    """)
-
-    st.subheader("Supported Drugs")
-    drugs = [
+# Cached data helpers (fix NameError)
+@st.cache_data
+def get_drugs():
+    return [
         "amlodipine", "losartan", "metformin", "glimepiride",
         "amoxicillin", "azithromycin", "paracetamol",
         "ibuprofen", "salbutamol", "montelukast"
     ]
-    st.markdown("\n".join([f"- {drug}" for drug in drugs]))
 
-    st.subheader("Example Commands")
-    st.code("CALCULATE DOSE FOR drug=metformin, condition=diabetes, weight=70kg, age=45", language="text")
-    st.code("CHECK INTERACTION BETWEEN losartan AND ibuprofen", language="text")
-    st.code("VALIDATE PRESCRIPTION drug=amlodipine, dose=5mg", language="text")
+@st.cache_data
+def get_condition_map():
+    return {
+        "amlodipine": ["hypertension"],
+        "losartan": ["hypertension"],
+        "metformin": ["diabetes"],
+        "glimepiride": ["diabetes"],
+        "amoxicillin": ["infection"],
+        "azithromycin": ["infection"],
+        "paracetamol": ["pain"],
+        "ibuprofen": ["pain", "inflammation"],
+        "salbutamol": ["asthma"],
+        "montelukast": ["asthma"],
+    }
 
-# Main content area
-tab1, tab2, tab3, tab4 = st.tabs(["🩺 Command Input", "📊 Results", "📝 History", "ℹ️ About"])
+# Helper: render result in original format
+# (defined before routing to avoid breaking if/elif chain)
 
-with tab1:
-    st.header("Enter Medical Command")
+def render_original_output(result_dict: dict):
+    res_type = result_dict.get('type')
+    if res_type in ('CALCULATE','ADJUST'):
+        r = result_dict['result']
+        if res_type == 'CALCULATE':
+            st.success("✅ Dose calculation completed successfully!")
+        else:
+            st.success("✅ Dose adjustment completed successfully!")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Drug", r['drug'].title())
+            st.metric("Condition", r['condition'].title())
+            label = "Recommended Daily Dose" if res_type == 'CALCULATE' else "Adjusted Daily Dose"
+            st.metric(label, f"{r['recommended_mg_per_day']} mg/day")
+        with col2:
+            if r.get('per_dose_mg'):
+                st.metric("Per-Dose Amount", f"{r['per_dose_mg']} mg")
+                st.metric("Doses Per Day", r['doses_per_day'])
+            sr = r.get('safety_range_mg_day')
+            if sr:
+                st.metric("Safety Range", f"{sr[0]}-{sr[1]} mg/day")
+        st.info(f"**Rationale:** {r.get('rationale','')}")
+        if r.get('alert'):
+            st.warning(f"⚠️ **ALERT:** {r['alert']}")
+    elif res_type == 'CHECK':
+        st.success("✅ Interaction check completed!")
+        st.info(f"**Interaction:** {result_dict['interaction']}")
+    elif res_type == 'VALIDATE':
+        r = result_dict['result']
+        if r['status'] == 'OK':
+            st.success(f"✅ **{r['status']}:** {r['message']}")
+        elif r['status'] == 'EXCEEDS':
+            st.error(f"❌ **{r['status']}:** {r['message']}")
+        else:
+            st.warning(f"⚠️ **{r['status']}:** {r['message']}")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Drug", r['drug'].title())
+        with col2:
+            st.metric("Prescribed Dose", f"{r['dose_mg_per_day']} mg/day")
+        with col3:
+            st.metric("Status", r['status'])
+    elif res_type == 'REPORT':
+        st.success(f"✅ Regimen report for Patient ID: {result_dict['patient_id']}")
+        entries = result_dict.get('entries', [])
+        if entries:
+            st.write(f"**Total Entries:** {len(entries)}")
+            for i, entry in enumerate(entries, 1):
+                with st.expander(f"Entry {i}: {entry.get('drug', 'N/A').title()}"):
+                    st.json(entry)
+        else:
+            st.info("No regimen entries found for this patient.")
+    elif res_type == 'ALERT_RULE':
+        st.success("✅ Alert rule configured!")
+        st.info(f"**Rule:** {result_dict['rule']}")
+        st.info(f"**Status:** {result_dict['status']}")
 
-    # Command templates
-    st.subheader("Quick Templates")
-    col1, col2, col3 = st.columns(3)
+# Header
+st.markdown('<div class="main-header">💊 Medical Dosage Calculation Interpreter</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Software Bros And Programming Nerds</div>', unsafe_allow_html=True)
 
-    with col1:
-        if st.button("Calculate Dose", use_container_width=True):
-            st.session_state.command_template = "CALCULATE DOSE FOR drug=, condition=, weight=kg, age="
-    with col2:
-        if st.button("Check Interaction", use_container_width=True):
-            st.session_state.command_template = "CHECK INTERACTION BETWEEN  AND "
-    with col3:
-        if st.button("Validate Prescription", use_container_width=True):
-            st.session_state.command_template = "VALIDATE PRESCRIPTION drug=, dose=mg"
-
-    # Command input
-    default_command = st.session_state.get('command_template', '')
-    command = st.text_area(
-        "Command:",
-        value=default_command,
-        height=100,
-        placeholder="Enter your medical command here...",
-        help="Type or use templates above"
-    )
-
-    col1, col2 = st.columns([1, 5])
-    with col1:
-        execute_btn = st.button("▶️ Execute", type="primary", use_container_width=True)
-    with col2:
-        clear_btn = st.button("🗑️ Clear", use_container_width=True)
-
-    if clear_btn:
-        st.session_state.command_template = ''
+# Sidebar
+with st.sidebar:
+    st.header("Navigation")
+    st.markdown('<div class="page-badge">Actions</div>', unsafe_allow_html=True)
+    if st.button("🧮 Calculate Dose", use_container_width=True):
+        st.session_state.active_tab = "Actions"
+        st.session_state.active_section = "calc"
+        st.rerun()
+    if st.button("⚖️ Check Interaction", use_container_width=True):
+        st.session_state.active_tab = "Actions"
+        st.session_state.active_section = "interact"
+        st.rerun()
+    if st.button("✅ Validate Prescription", use_container_width=True):
+        st.session_state.active_tab = "Actions"
+        st.session_state.active_section = "validate"
+        st.rerun()
+    st.divider()
+    if st.button("📝 History", use_container_width=True):
+        st.session_state.active_tab = "History"
+        st.rerun()
+    if st.button("ℹ️ About", use_container_width=True):
+        st.session_state.active_tab = "About"
         st.rerun()
 
-    if execute_btn and command.strip():
-        st.divider()
-        st.subheader("Execution Results")
+# Main content area
+active = st.session_state.active_tab
+# Add navigation guardrails
+allowed_tabs = {'Actions','History','About','Interact','Validate','Results'}
+if active not in allowed_tabs:
+    st.warning(f"Unknown tab '{active}'. Redirecting to Actions.")
+    st.session_state.active_tab = 'Actions'
+    active = 'Actions'
 
-        try:
-            # Execute the command
-            result = run(command)
-
-            # Store in history
-            st.session_state.command_history.append({
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                'command': command
-            })
-            st.session_state.result_history.append({
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                'command': command,
-                'result': result,
-                'status': 'success'
-            })
-
-            # Display results based on command type
-            if result.get('type') == 'CALCULATE':
-                st.success("✅ Dose calculation completed successfully!")
-                r = result['result']
-
+# Unified Actions page with three sections, results inline
+if active == 'Actions':
+    sections = ['calc','interact','validate']
+    active_section = st.session_state.get('active_section','calc')
+    # Keep original section order; emphasize selected via expanded expander
+    for sec in sections:
+        if sec == 'calc':
+            with st.expander("🧮 Calculate Dose", expanded=(active_section=='calc')):
+                st.markdown('<div class="page-badge">Calculate Dose</div>', unsafe_allow_html=True)
+                st.header("Calculate Dose")
+                drugs = get_drugs()
+                condition_map = get_condition_map()
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.metric("Drug", r['drug'].title())
-                    st.metric("Condition", r['condition'].title())
-                    st.metric("Recommended Daily Dose", f"{r['recommended_mg_per_day']} mg/day")
-
+                    sel_drug = st.selectbox("Drug", options=drugs, index=2, key="calc_drug")
+                    cond_opts = condition_map.get(sel_drug, ["general"]) 
+                    sel_condition = st.selectbox("Condition", options=cond_opts, index=0, key="calc_condition")
                 with col2:
-                    if r['per_dose_mg']:
-                        st.metric("Per-Dose Amount", f"{r['per_dose_mg']} mg")
-                        st.metric("Doses Per Day", r['doses_per_day'])
-                    st.metric("Safety Range", f"{r['safety_range_mg_day'][0]}-{r['safety_range_mg_day'][1]} mg/day")
-
-                st.info(f"**Rationale:** {r['rationale']}")
-
-                if r.get('alert'):
-                    st.warning(f"⚠️ **ALERT:** {r['alert']}")
-
-            elif result.get('type') == 'CHECK':
-                st.success("✅ Interaction check completed!")
-                st.info(f"**Interaction:** {result['interaction']}")
-
-            elif result.get('type') == 'VALIDATE':
-                r = result['result']
-                if r['status'] == 'OK':
-                    st.success(f"✅ **{r['status']}:** {r['message']}")
-                elif r['status'] == 'EXCEEDS':
-                    st.error(f"❌ **{r['status']}:** {r['message']}")
-                else:
-                    st.warning(f"⚠️ **{r['status']}:** {r['message']}")
-
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Drug", r['drug'].title())
-                with col2:
-                    st.metric("Prescribed Dose", f"{r['dose_mg_per_day']} mg/day")
-                with col3:
-                    st.metric("Status", r['status'])
-
-            elif result.get('type') == 'ADJUST':
-                st.success("✅ Dose adjustment completed successfully!")
-                r = result['result']
-
+                    weight = st.number_input("Weight (kg)", min_value=1.0, max_value=300.0, value=70.0, step=0.5, key="calc_weight")
+                    age = st.number_input("Age", min_value=0, max_value=120, value=45, step=1, key="calc_age")
+                    kidney_function = st.selectbox("Kidney Function", options=["normal","impaired","reduced","ckd"], index=0, key="calc_kidney")
+                command = f"CALCULATE DOSE FOR drug={sel_drug}, condition={sel_condition}, weight={weight}kg, age={int(age)}, kidney_function={kidney_function}"
+                execute_btn = st.button("▶️ Execute", type="primary", key="calc_execute")
+                if execute_btn and command.strip():
+                    try:
+                        result = run(command)
+                        st.session_state.command_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command})
+                        st.session_state.result_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'result': result,'status': 'success'})
+                        st.session_state.command_history = st.session_state.command_history[-200:]
+                        st.session_state.result_history = st.session_state.result_history[-200:]
+                        st.session_state.section_results['calc'] = {'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'result': result,'status': 'success'}
+                        st.session_state.active_section = 'calc'
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Execution failed: {str(e)}")
+                        st.session_state.section_results['calc'] = {'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'error': str(e),'error_type': 'Exception','status': 'error'}
+                        st.session_state.result_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'error': str(e),'error_type': 'Exception','status': 'error'})
+                        st.session_state.result_history = st.session_state.result_history[-200:]
+                latest = st.session_state.section_results.get('calc')
+                if latest:
+                    st.caption(f"Last executed at {latest['timestamp']}")
+                    if latest.get('status') == 'error':
+                        st.error(f"❌ Execution error: {latest.get('error_type','Error')} — {latest.get('error','')}")
+                        st.code(latest.get('command',''), language='text')
+                    else:
+                        render_original_output(latest.get('result', {}))
+                        show_raw = st.checkbox("Show Raw Output", key="calc_show_raw")
+                        if show_raw:
+                            st.json(latest.get('result', {}))
+                        st.write(f"Command: `{latest.get('command','')}`")
+            st.markdown("<hr>", unsafe_allow_html=True)
+        elif sec == 'interact':
+            with st.expander("⚖️ Check Interaction", expanded=(active_section=='interact')):
+                st.markdown('<div class="page-badge">Check Interaction</div>', unsafe_allow_html=True)
+                st.header("Check Interaction")
+                drugs = get_drugs()
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.metric("Drug", r['drug'].title())
-                    st.metric("Condition", r['condition'].title())
-                    st.metric("Adjusted Daily Dose", f"{r['recommended_mg_per_day']} mg/day")
-
+                    drug_a = st.selectbox("Drug A", options=drugs, index=1, key="interact_a")
                 with col2:
-                    if r['per_dose_mg']:
-                        st.metric("Per-Dose Amount", f"{r['per_dose_mg']} mg")
-                        st.metric("Doses Per Day", r['doses_per_day'])
-                    st.metric("Safety Range", f"{r['safety_range_mg_day'][0]}-{r['safety_range_mg_day'][1]} mg/day")
+                    drug_b = st.selectbox("Drug B", options=drugs, index=0, key="interact_b")
+                if drug_a == drug_b:
+                    st.warning("Select two different drugs to check interactions.")
+                command = f"CHECK INTERACTION BETWEEN {drug_a} AND {drug_b}"
+                execute_btn = st.button("▶️ Execute", type="primary", key="interact_execute")
+                if execute_btn and command.strip():
+                    try:
+                        result = run(command)
+                        st.session_state.command_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command})
+                        st.session_state.result_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'result': result,'status': 'success'})
+                        st.session_state.command_history = st.session_state.command_history[-200:]
+                        st.session_state.result_history = st.session_state.result_history[-200:]
+                        st.session_state.section_results['interact'] = {'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'result': result,'status': 'success'}
+                        st.session_state.active_section = 'interact'
+                        st.rerun()
+                    except Exception as e:
+                        st.error(str(e))
+                        st.session_state.section_results['interact'] = {'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'error': str(e),'error_type': 'Exception','status': 'error'}
+                        st.session_state.result_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'error': str(e),'error_type': 'Exception','status': 'error'})
+                        st.session_state.result_history = st.session_state.result_history[-200:]
+                latest = st.session_state.section_results.get('interact')
+                if latest:
+                    st.caption(f"Last executed at {latest['timestamp']}")
+                    if latest.get('status') == 'error':
+                        st.error(f"❌ Execution error: {latest.get('error_type','Error')} — {latest.get('error','')}")
+                        st.code(latest.get('command',''), language='text')
+                    else:
+                        render_original_output(latest.get('result', {}))
+                        show_raw = st.checkbox("Show Raw Output", key="interact_show_raw")
+                        if show_raw:
+                            st.json(latest.get('result', {}))
+                        st.write(f"Command: `{latest.get('command','')}`")
+            st.markdown("<hr>", unsafe_allow_html=True)
+        elif sec == 'validate':
+            with st.expander("✅ Validate Prescription", expanded=(active_section=='validate')):
+                st.markdown('<div class="page-badge">Validate Prescription</div>', unsafe_allow_html=True)
+                st.header("Validate Prescription")
+                drugs = get_drugs()
+                col1, col2 = st.columns(2)
+                with col1:
+                    v_drug = st.selectbox("Drug", options=drugs, index=0, key="val_drug_page")
+                with col2:
+                    dose = st.number_input("Dose (mg/day)", min_value=0.0, max_value=5000.0, value=500.0, step=50.0, key="val_dose_page")
+                command = f"VALIDATE PRESCRIPTION drug={v_drug}, dose={int(dose)}mg"
+                execute_btn = st.button("▶️ Execute", type="primary", key="validate_execute")
+                if execute_btn and command.strip():
+                    try:
+                        result = run(command)
+                        st.session_state.command_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command})
+                        st.session_state.result_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'result': result,'status': 'success'})
+                        st.session_state.command_history = st.session_state.command_history[-200:]
+                        st.session_state.result_history = st.session_state.result_history[-200:]
+                        st.session_state.section_results['validate'] = {'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'result': result,'status': 'success'}
+                        st.session_state.active_section = 'validate'
+                        st.rerun()
+                    except Exception as e:
+                        st.error(str(e))
+                        st.session_state.section_results['validate'] = {'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'error': str(e),'error_type': 'Exception','status': 'error'}
+                        st.session_state.result_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'error': str(e),'error_type': 'Exception','status': 'error'})
+                        st.session_state.result_history = st.session_state.result_history[-200:]
+                latest = st.session_state.section_results.get('validate')
+                if latest:
+                    st.caption(f"Last executed at {latest['timestamp']}")
+                    if latest.get('status') == 'error':
+                        st.error(f"❌ Execution error: {latest.get('error_type','Error')} — {latest.get('error','')}")
+                        st.code(latest.get('command',''), language='text')
+                    else:
+                        render_original_output(latest.get('result', {}))
+                        show_raw = st.checkbox("Show Raw Output", key="validate_show_raw")
+                        if show_raw:
+                            st.json(latest.get('result', {}))
+                        st.write(f"Command: `{latest.get('command','')}`")
+            st.markdown("<hr>", unsafe_allow_html=True)
 
-                st.info(f"**Rationale:** {r['rationale']}")
+# Disable legacy individual tabs migrated into Actions page
+elif active == 'Interact':
+    # migrated into Actions page
+    pass
+elif active == 'Validate':
+    # migrated into Actions page
+    pass
+elif active == 'Results':
+    # removed standalone Results tab; results now inline under sections
+    pass
 
-                if r.get('alert'):
-                    st.warning(f"⚠️ **ALERT:** {r['alert']}")
-
-            elif result.get('type') == 'REPORT':
-                st.success(f"✅ Regimen report for Patient ID: {result['patient_id']}")
-                entries = result['entries']
-
-                if entries:
-                    st.write(f"**Total Entries:** {len(entries)}")
-                    for i, entry in enumerate(entries, 1):
-                        with st.expander(f"Entry {i}: {entry.get('drug', 'N/A').title()}"):
-                            st.json(entry)
-                else:
-                    st.info("No regimen entries found for this patient.")
-
-            elif result.get('type') == 'ALERT_RULE':
-                st.success("✅ Alert rule configured!")
-                st.info(f"**Rule:** {result['rule']}")
-                st.info(f"**Status:** {result['status']}")
-
-            # Show raw JSON in expander
-            with st.expander("View Raw JSON Response"):
-                st.json(result)
-
-        except LexicalError as e:
-            st.error(f"❌ **Lexical Error:** {str(e)}")
-            st.session_state.result_history.append({
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                'command': command,
-                'error': str(e),
-                'error_type': 'LexicalError',
-                'status': 'error'
-            })
-
-        except ParseError as e:
-            st.error(f"❌ **Parse Error:** {str(e)}")
-            st.session_state.result_history.append({
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                'command': command,
-                'error': str(e),
-                'error_type': 'ParseError',
-                'status': 'error'
-            })
-
-        except UnknownDrugError as e:
-            st.error(f"❌ **Unknown Drug Error:** {str(e)}")
-            st.info("Please check the supported drugs list in the sidebar.")
-            st.session_state.result_history.append({
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                'command': command,
-                'error': str(e),
-                'error_type': 'UnknownDrugError',
-                'status': 'error'
-            })
-
-        except ExecutionError as e:
-            st.error(f"❌ **Execution Error:** {str(e)}")
-            st.session_state.result_history.append({
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                'command': command,
-                'error': str(e),
-                'error_type': 'ExecutionError',
-                'status': 'error'
-            })
-
-        except Exception as e:
-            st.error(f"❌ **Unexpected Error:** {str(e)}")
-            st.session_state.result_history.append({
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                'command': command,
-                'error': str(e),
-                'error_type': 'Exception',
-                'status': 'error'
-            })
-
-with tab2:
-    st.header("Latest Results")
-    if st.session_state.result_history:
-        latest = st.session_state.result_history[-1]
-
-        st.subheader(f"Executed at: {latest['timestamp']}")
-        st.code(latest['command'], language="text")
-
-        if latest['status'] == 'success':
-            st.success("✅ Command executed successfully")
-            with st.expander("View Full Results"):
-                st.json(latest['result'])
+# History and About remain the same below
+elif active == 'History':
+    st.markdown('<div class="page-badge">History</div>', unsafe_allow_html=True)
+    st.header("History")
+    try:
+        if not st.session_state.command_history and not st.session_state.result_history:
+            st.info("No history yet. Execute commands to populate history.")
         else:
-            st.error(f"❌ Error: {latest.get('error_type', 'Unknown')}")
-            st.write(latest.get('error', 'No error message'))
-    else:
-        st.info("No results yet. Execute a command in the 'Command Input' tab.")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.subheader("Commands")
+                for item in st.session_state.command_history[-50:]:
+                    st.write(f"- `{item['timestamp']}` — `{item['command']}`")
+            with col2:
+                st.subheader("Results")
+                for item in st.session_state.result_history[-50:]:
+                    status = item.get('status','success')
+                    label = "✅ Success" if status != 'error' else "❌ Error"
+                    st.write(f"- `{item['timestamp']}` — {label}")
+                    with st.expander(item.get('command','(unknown)')):
+                        if status == 'error':
+                            st.error(item.get('error',''))
+                        else:
+                            st.json(item.get('result', {}))
+    except Exception as e:
+        st.error(f"Failed to render History: {str(e)}")
 
-with tab3:
-    st.header("Command History")
+elif active == 'About':
+    st.markdown('<div class="page-badge">About</div>', unsafe_allow_html=True)
+    st.header("About")
+    try:
+        st.write("Medical Dosage Calculation Interpreter — Software Bros And Programming Nerds.")
+        st.write("Use the action sections to construct and execute commands. Results render inline under each section; the History tab records activity.")
+        st.write("Performance guardrails applied: capped histories and cached data. Validation harness and tests are available in the repo.")
+    except Exception as e:
+        st.error(f"Failed to render About: {str(e)}")
 
-    if st.session_state.result_history:
-        st.write(f"**Total Commands:** {len(st.session_state.result_history)}")
-
-        for i, entry in enumerate(reversed(st.session_state.result_history), 1):
-            with st.expander(f"{entry['timestamp']} - {entry['status'].upper()}"):
-                st.code(entry['command'], language="text")
-                if entry['status'] == 'success':
-                    st.json(entry['result'])
-                else:
-                    st.error(f"**Error Type:** {entry.get('error_type', 'Unknown')}")
-                    st.write(entry.get('error', 'No error message'))
-
-        if st.button("🗑️ Clear History"):
-            st.session_state.result_history = []
-            st.session_state.command_history = []
-            st.rerun()
-    else:
-        st.info("No command history yet.")
-
-with tab4:
-    st.header("About This Application")
-
-    st.markdown("""
-    ### Medical Dosage Calculation Interpreter
-
-    This application is a **domain-specific language (DSL) interpreter** designed for healthcare 
-    professionals to calculate medication dosages, check drug interactions, validate prescriptions, 
-    and manage patient medication regimens.
-
-    #### Features
-
-    - **✅ Automated Dose Calculations:** Computes appropriate medication doses based on patient 
-      weight, age, and medical conditions while enforcing safety limits
-    - **✅ Drug Interaction Checking:** Identifies potentially dangerous combinations of medications
-    - **✅ Prescription Validation:** Verifies that prescribed doses fall within safe therapeutic ranges
-    - **✅ Patient Regimen Management:** Tracks and reports medication histories for individual patients
-    - **✅ Safety Alerts:** Raises warnings when computed doses exceed established safety thresholds
-
-    #### Technology Stack
-
-    - **Frontend:** Streamlit
-    - **Backend:** Custom Python interpreter with lexer, parser, and executor
-    - **Language:** Medical Prescription Language (MPL)
-
-    #### Important Disclaimers
-
-    ⚠️ **This is a demonstration tool for educational purposes only.**
-
-    - This application is NOT approved for clinical use
-    - Always consult with qualified healthcare professionals
-    - Do not use for actual patient care without proper validation
-    - Drug dosing rules are simplified for demonstration purposes
-
-    #### Developed By
-
-    **Software Bros And Programming Nerds (SBAPN)**
-    - Besario, Adrian
-    - Macatangay, Robin
-    - Magat, Rolando
-    - Villosa, Emmanuel
-
-    CSS125L - Principles of Programming Languages Laboratory
-    """)
-
-    st.divider()
-
-    st.subheader("System Architecture")
-    st.image("https://via.placeholder.com/800x300?text=Lexer+%E2%86%92+Parser+%E2%86%92+AST+%E2%86%92+Executor+%E2%86%92+Results")
-
-    st.markdown("""
-    1. **Lexer:** Tokenizes raw command input
-    2. **Parser:** Validates syntax and builds Abstract Syntax Tree
-    3. **AST:** Structured representation of the command
-    4. **Executor:** Processes command using drug rules
-    5. **Results:** Returns calculation or error messages
-    """)
-
-# Footer
-st.divider()
-st.markdown("""
-<div style="text-align: center; color: #666; padding: 1rem;">
-    <small>© 2025 Medical Dosage Calculator | For Educational Purposes Only</small>
-</div>
-""", unsafe_allow_html=True)
+# Fallback
+else:
+    st.info("Select an action from the sidebar to get started.")
