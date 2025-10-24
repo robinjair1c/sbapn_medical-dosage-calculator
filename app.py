@@ -407,14 +407,72 @@ elif active == 'History':
         st.error(f"Failed to render History: {str(e)}")
 
 elif active == 'About':
-    st.header("About")
+    st.header("About This Application")
     try:
-        st.write("Medical Dosage Calculation Interpreter — Software Bros And Programming Nerds.")
-        st.write("Use the action sections to construct and execute commands. Results render inline under each section; the History tab records activity.")
-        st.write("Performance guardrails applied: capped histories and cached data. Validation harness and tests are available in the repo.")
+        
+        st.markdown("""
+        ### Medical Dosage Calculation Interpreter
+
+        This machine project was designed for healthcare calculate medication dosages, check drug interactions, validate prescriptions, 
+        and manage patient medication regimens.
+
+        #### Features
+
+        - **✅ Automated Dose Calculations:** Computes appropriate medication doses based on patient 
+        weight, age, and medical conditions while enforcing safety limits
+        - **✅ Drug Interaction Checking:** Identifies potentially dangerous combinations of medications
+        - **✅ Prescription Validation:** Verifies that prescribed doses fall within safe therapeutic ranges
+        - **✅ Patient Regimen Management:** Tracks and reports medication histories for individual patients
+        - **✅ Safety Alerts:** Raises warnings when computed doses exceed established safety thresholds
+
+        #### Technology Stack
+
+        - **Frontend:** Streamlit
+        - **Backend:** Custom Python interpreter with lexer, parser, and executor
+
+        #### Important Disclaimers
+
+        ⚠️ **This is a demonstration tool for educational purposes only.**
+
+        - This application is NOT approved for clinical use
+        - Always consult with qualified healthcare professionals
+        - Do not use for actual patient care without proper validation
+        - Drug dosing rules are simplified for demonstration purposes
+
+        #### Developed By
+
+        **Software Bros And Programming Nerds (SBAPN)**
+        - Besario, Adrian
+        - Macatangay, Robin
+        - Magat, Rolando
+        - Villosa, Emmanuel
+
+        CSS125L - Principles of Programming Languages Laboratory
+        """)
+
+        st.divider()
+
+        st.subheader("System Architecture")
+        
+        st.markdown("""
+        1. **Lexer:** Tokenizes raw command input
+        2. **Parser:** Validates syntax and builds Abstract Syntax Tree
+        3. **AST:** Structured representation of the command
+        4. **Executor:** Processes command using drug rules
+        5. **Results:** Returns calculation or error messages
+        """)
+
     except Exception as e:
         st.error(f"Failed to render About: {str(e)}")
 
 # Fallback
 else:
     st.info("Select an action from the sidebar to get started.")
+
+# Footer
+st.divider()
+st.markdown("""
+<div style="text-align: center; color: #666; padding: 1rem;">
+    <small>© 2025 Medical Dosage Calculator | SBAPN</small>
+</div>
+""", unsafe_allow_html=True)
