@@ -209,6 +209,11 @@ with st.sidebar:
         st.session_state.active_tab = "Actions"
         st.session_state.active_section = "validate"
         st.rerun()
+    # Restore Manual Commands button in sidebar
+    if st.button("⌨️ Manual Commands", use_container_width=True):
+        st.session_state.active_tab = "Actions"
+        st.session_state.active_section = "manual"
+        st.rerun()
     st.divider()
     if st.button("📝 History", use_container_width=True):
         st.session_state.active_tab = "History"
@@ -226,17 +231,37 @@ if active not in allowed_tabs:
     st.session_state.active_tab = 'Actions'
     active = 'Actions'
 
+# Helper: consolidate execute + record to minimize duplication and overhead
+def execute_and_record(section_key: str, command: str):
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        result = run(command)
+        st.session_state.command_history.append({'timestamp': ts,'command': command})
+        st.session_state.result_history.append({'timestamp': ts,'command': command,'result': result,'status': 'success'})
+        st.session_state.command_history = st.session_state.command_history[-200:]
+        st.session_state.result_history = st.session_state.result_history[-200:]
+        st.session_state.section_results[section_key] = {'timestamp': ts,'command': command,'result': result,'status': 'success'}
+        st.session_state.active_section = section_key
+        st.rerun()
+    except Exception as e:
+        st.error(str(e))
+        st.session_state.section_results[section_key] = {'timestamp': ts,'command': command,'error': str(e),'error_type': 'Exception','status': 'error'}
+        st.session_state.result_history.append({'timestamp': ts,'command': command,'error': str(e),'error_type': 'Exception','status': 'error'})
+        st.session_state.result_history = st.session_state.result_history[-200:]
+
 # Unified Actions page with three sections, results inline
 if active == 'Actions':
-    sections = ['calc','interact','validate']
+    # Precompute static lists once per rerun (functions are cached but avoid repeated calls)
+    drugs = get_drugs()
+    condition_map = get_condition_map()
+    sections = ['calc','interact','validate','manual']
     active_section = st.session_state.get('active_section','calc')
     # Keep original section order; emphasize selected via expanded expander
     for sec in sections:
         if sec == 'calc':
             with st.expander("🧮 Calculate Dose", expanded=(active_section=='calc')):
                 st.header("Calculate Dose")
-                drugs = get_drugs()
-                condition_map = get_condition_map()
+                # using precomputed 'drugs' and 'condition_map' from Actions page
                 col1, col2 = st.columns(2)
                 with col1:
                     sel_drug = st.selectbox("Drug", options=drugs, index=2, key="calc_drug")
@@ -249,20 +274,7 @@ if active == 'Actions':
                 command = f"CALCULATE DOSE FOR drug={sel_drug}, condition={sel_condition}, weight={weight}kg, age={int(age)}, kidney_function={kidney_function}"
                 execute_btn = st.button("▶️ Execute", type="primary", key="calc_execute")
                 if execute_btn and command.strip():
-                    try:
-                        result = run(command)
-                        st.session_state.command_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command})
-                        st.session_state.result_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'result': result,'status': 'success'})
-                        st.session_state.command_history = st.session_state.command_history[-200:]
-                        st.session_state.result_history = st.session_state.result_history[-200:]
-                        st.session_state.section_results['calc'] = {'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'result': result,'status': 'success'}
-                        st.session_state.active_section = 'calc'
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Execution failed: {str(e)}")
-                        st.session_state.section_results['calc'] = {'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'error': str(e),'error_type': 'Exception','status': 'error'}
-                        st.session_state.result_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'error': str(e),'error_type': 'Exception','status': 'error'})
-                        st.session_state.result_history = st.session_state.result_history[-200:]
+                    execute_and_record('calc', command)
                 latest = st.session_state.section_results.get('calc')
                 if latest:
                     st.caption(f"Last executed at {latest['timestamp']}")
@@ -279,7 +291,7 @@ if active == 'Actions':
         elif sec == 'interact':
             with st.expander("⚖️ Check Interaction", expanded=(active_section=='interact')):
                 st.header("Check Interaction")
-                drugs = get_drugs()
+                # using precomputed 'drugs' from Actions page
                 col1, col2 = st.columns(2)
                 with col1:
                     drug_a = st.selectbox("Drug A", options=drugs, index=1, key="interact_a")
@@ -290,20 +302,7 @@ if active == 'Actions':
                 command = f"CHECK INTERACTION BETWEEN {drug_a} AND {drug_b}"
                 execute_btn = st.button("▶️ Execute", type="primary", key="interact_execute")
                 if execute_btn and command.strip():
-                    try:
-                        result = run(command)
-                        st.session_state.command_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command})
-                        st.session_state.result_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'result': result,'status': 'success'})
-                        st.session_state.command_history = st.session_state.command_history[-200:]
-                        st.session_state.result_history = st.session_state.result_history[-200:]
-                        st.session_state.section_results['interact'] = {'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'result': result,'status': 'success'}
-                        st.session_state.active_section = 'interact'
-                        st.rerun()
-                    except Exception as e:
-                        st.error(str(e))
-                        st.session_state.section_results['interact'] = {'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'error': str(e),'error_type': 'Exception','status': 'error'}
-                        st.session_state.result_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'error': str(e),'error_type': 'Exception','status': 'error'})
-                        st.session_state.result_history = st.session_state.result_history[-200:]
+                    execute_and_record('interact', command)
                 latest = st.session_state.section_results.get('interact')
                 if latest:
                     st.caption(f"Last executed at {latest['timestamp']}")
@@ -320,7 +319,7 @@ if active == 'Actions':
         elif sec == 'validate':
             with st.expander("✅ Validate Prescription", expanded=(active_section=='validate')):
                 st.header("Validate Prescription")
-                drugs = get_drugs()
+                # using precomputed 'drugs' from Actions page
                 col1, col2 = st.columns(2)
                 with col1:
                     v_drug = st.selectbox("Drug", options=drugs, index=0, key="val_drug_page")
@@ -329,20 +328,7 @@ if active == 'Actions':
                 command = f"VALIDATE PRESCRIPTION drug={v_drug}, dose={int(dose)}mg"
                 execute_btn = st.button("▶️ Execute", type="primary", key="validate_execute")
                 if execute_btn and command.strip():
-                    try:
-                        result = run(command)
-                        st.session_state.command_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command})
-                        st.session_state.result_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'result': result,'status': 'success'})
-                        st.session_state.command_history = st.session_state.command_history[-200:]
-                        st.session_state.result_history = st.session_state.result_history[-200:]
-                        st.session_state.section_results['validate'] = {'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'result': result,'status': 'success'}
-                        st.session_state.active_section = 'validate'
-                        st.rerun()
-                    except Exception as e:
-                        st.error(str(e))
-                        st.session_state.section_results['validate'] = {'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'error': str(e),'error_type': 'Exception','status': 'error'}
-                        st.session_state.result_history.append({'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),'command': command,'error': str(e),'error_type': 'Exception','status': 'error'})
-                        st.session_state.result_history = st.session_state.result_history[-200:]
+                    execute_and_record('validate', command)
                 latest = st.session_state.section_results.get('validate')
                 if latest:
                     st.caption(f"Last executed at {latest['timestamp']}")
@@ -352,6 +338,31 @@ if active == 'Actions':
                     else:
                         render_original_output(latest.get('result', {}))
                         show_raw = st.checkbox("Show Raw Output", key="validate_show_raw")
+                        if show_raw:
+                            st.json(latest.get('result', {}))
+                        st.write(f"Command: `{latest.get('command','')}`")
+            st.markdown("<hr>", unsafe_allow_html=True)
+        elif sec == 'manual':
+            with st.expander("⌨️ Manual Commands", expanded=(active_section=='manual')):
+                st.header("Manual Commands")
+                command = st.text_area(
+                    "Command",
+                    value="",
+                    placeholder="e.g., CALCULATE DOSE FOR drug=metformin, condition=diabetes, weight=70kg, age=45, kidney_function=normal",
+                    key="manual_command_input"
+                )
+                execute_btn = st.button("▶️ Execute", type="primary", key="manual_execute")
+                if execute_btn and command.strip():
+                    execute_and_record('manual', command)
+                latest = st.session_state.section_results.get('manual')
+                if latest:
+                    st.caption(f"Last executed at {latest['timestamp']}")
+                    if latest.get('status') == 'error':
+                        st.error(f"❌ Execution error: {latest.get('error_type','Error')} — {latest.get('error','')}")
+                        st.code(latest.get('command',''), language='text')
+                    else:
+                        render_original_output(latest.get('result', {}))
+                        show_raw = st.checkbox("Show Raw Output", key="manual_show_raw")
                         if show_raw:
                             st.json(latest.get('result', {}))
                         st.write(f"Command: `{latest.get('command','')}`")
@@ -382,7 +393,8 @@ elif active == 'History':
                     st.write(f"- `{item['timestamp']}` — `{item['command']}`")
             with col2:
                 st.subheader("Results")
-                for item in st.session_state.result_history[-50:]:
+                # Show newest first
+                for item in st.session_state.result_history[-50:][::-1]:
                     status = item.get('status','success')
                     label = "✅ Success" if status != 'error' else "❌ Error"
                     st.write(f"- `{item['timestamp']}` — {label}")
