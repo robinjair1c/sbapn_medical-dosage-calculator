@@ -29,17 +29,17 @@ This project implements a Medical Prescription Interpreter — a domain-specific
 - No external libraries required (only Python standard library)
 
 ### Running Locally
-1. Download all `.py` files and the Jupyter notebook (`SBAPN_CSS125L_Machine_Project_UPDATED.ipynb`) into the same directory.
+1. Download all `.py` files and the Jupyter notebook (`SBAPN_Machine_Project.ipynb`) into the same directory.
 2. Open the Jupyter notebook with:
     ```
-    jupyter notebook SBAPN_CSS125L_Machine_Project_UPDATED.ipynb
+    jupyter notebook SBAPN_Machine_Project.ipynb
     ```
 3. Run all cells sequentially to load modules and test the interpreter.
 4. Use the example commands in the Testing section to validate functionality.
 
 ### Running on Google Colab
 1. Upload all `.py` files and the notebook to your Google Drive.
-2. Open the notebook `SBAPN_CSS125L_Machine_Project_UPDATED.ipynb` in Colab.
+2. Open the notebook `SBAPN_Machine_Project.ipynb` in Colab.
 3. If using files from Drive, mount Drive with:
     ```
     from google.colab import drive
@@ -49,7 +49,7 @@ This project implements a Medical Prescription Interpreter — a domain-specific
 5. Run the notebook cells to load and test the interpreter.
 
 ## File Structure
-- `SBAPN_CSS125L_Machine_Project_UPDATED.ipynb` — Main notebook containing all code and documentation.
+- `SBAPN_Machine_Project.ipynb` — Main notebook containing all code and documentation.
 - `tokens.py`, `lexer.py`, `parser.py`, `ast_nodes.py`, `interpreter.py`, `executor.py`, `rules.py`, `errors.py`, `init.py` — Python modules implementing the interpreter.
 
 ## Notes
