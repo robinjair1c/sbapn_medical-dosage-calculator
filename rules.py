@@ -95,4 +95,15 @@ INTERACTIONS: Dict[frozenset[str], str] = {
     frozenset(["losartan", "ibuprofen"]): "caution: NSAIDs may blunt antihypertensive effect",
     frozenset(["azithromycin", "amlodipine"]): "caution: potential hypotension risk",
     frozenset(["amlodipine", "losartan"]): "no significant interaction reported (commonly co-prescribed)",
+    frozenset(["metformin", "amlodipine"]): "monitor: amlodipine may alter metformin effects, possible hypoglycemia risk on withdrawal",
+    frozenset(["metformin", "ibuprofen"]): "caution: increased kidney risk, especially in predisposed patients",
+    frozenset(["metformin", "glimepiride"]): "monitor: additive effect, increased hypoglycemia risk—consider dose adjustment",
+    frozenset(["glimepiride", "ibuprofen"]): "monitor: possible altered glucose control when used together",
+    frozenset(["metformin", "paracetamol"]): "caution: closely monitor in patients with liver/kidney impairment",
+    frozenset(["amoxicillin", "ibuprofen"]): "caution: rare increased kidney risk, monitor if pre-existing renal impairment",
+    frozenset(["azithromycin", "paracetamol"]): "monitor: safe, but check for allergic rash",
+    frozenset(["azithromycin", "ibuprofen"]): "monitor: generally safe, be alert for hypersensitivity",
+    frozenset(["montelukast", "ibuprofen"]): "safe in most cases, monitor for rare hypersensitivity in asthmatics",
+    frozenset(["paracetamol", "ibuprofen"]): "safe: commonly co-prescribed for pain/fever, double-check kidney/liver status",
 }
+
